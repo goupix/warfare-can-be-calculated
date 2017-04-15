@@ -5,9 +5,7 @@ def F(r,S,ku,kv,dx,Du,Dv, u, v, i):
 
 	newu=r*u[i]*(1-u[i]/S)-kv*v[i]+Du*((u[i+1]-2*u[i]+u[i-1])/(dx**2))
 	newv=r*v[i]*(1-v[i]/S)-ku*u[i]+Dv*((v[i+1]-2*v[i]+v[i-1])/(dx**2))
-	print(Du*((u[i+1]-2*u[i]+u[i-1])/(dx**2)),Dv*((v[i+1]-2*v[i]+v[i-1])/(dx**2)))
-
-
+	
 	return(newu, newv)
 
 
@@ -23,7 +21,7 @@ def euler(r,S,ku,kv,dx,Du,Dv,ti,tf, L, h, F, u_init, v_init):
 	u[0]=u_init
 	v[0]=v_init
     
-	temps=np.linspace(ti,tf,T)
+	x=np.linspace(0,L,D)
  
 	for i in range(0,T-1):
 		for j in range(1,D-1):
@@ -39,17 +37,17 @@ def euler(r,S,ku,kv,dx,Du,Dv,ti,tf, L, h, F, u_init, v_init):
 				v[i+1][j]=0
 			else:
 				v[i+1][j]=h*fv+v[i][j]
+	
+	return(x,u,v)
 
-	return(temps, u,v)
-
-u_init=[0]*50+[200]*50
-v_init=[200]*50+[0]*50
-
-
-
-temps,u,v=euler(0.01,1000,0,10,1,0.1,0.1,0,100,100,1, F, u_init, v_init)
+u_init=[200]*50+[0]*50
+v_init=[0]*50+[200]*50
 
 
-plt.plot(temps,u[90])
-plt.plot(temps,v[90])
+
+x,u,v=euler(0.01,1000,10,0.1,1,0.1,0.1,0,10000,100,1, F, u_init, v_init)
+
+
+plt.plot(x,u[9000])
+plt.plot(x,v[9000])
 plt.show()
