@@ -12,8 +12,12 @@ def F(r,S,ku,kv,dx,Du,Dv, u, v, i):
 
 
 
-def euler(r,S,ku,kv,dx,Du,Dv,ti,tf, L, h, F, u_init, v_init):
-    
+def euler(r,S,ku,kv,dx,Du,Dv,ti,tf, L, h, F):
+
+	u_init=[200]*(int(L/2))+[0]*(int(L/2))
+	v_init=[0]*(int(L/2))+[200]*(int(L/2))
+
+
 	T=int((tf-ti)/h)
 	D=int(L/dx)
 	u=np.zeros((T,D))
@@ -37,17 +41,20 @@ def euler(r,S,ku,kv,dx,Du,Dv,ti,tf, L, h, F, u_init, v_init):
 				v[i+1][j]=0
 			else:
 				v[i+1][j]=h*fv+v[i][j]
-	
+	    
+		u[i+1][0]=u[i+1][1]
+		v[i+1][0]=v[i+1][1]
+
+		u[i+1][D-1]=u[i+1][D-2]
+		v[i+1][D-1]=v[i+1][D-2]
 	return(x,u,v)
 
-u_init=[200]*50+[0]*50
-v_init=[0]*50+[200]*50
 
 
 
-x,u,v=euler(0.01,1000,10,0.1,1,0.1,0.1,0,10000,100,1, F, u_init, v_init)
+x,u,v=euler(0.01,1000,10,0,1,0.1,0.1,0,10000,100,1, F)
 
 
-plt.plot(x,u[9000])
-plt.plot(x,v[9000])
+plt.plot(x,u[90])
+plt.plot(x,v[90])
 plt.show()
