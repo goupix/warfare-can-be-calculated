@@ -14,38 +14,42 @@ import numpy as np
 
 
 "load image data"
-france =  io.imread( 'france2.png')      # Gray image, rgb images need pre-conversion
+pays =  io.imread( 'france-allemagne.png', as_grey=True)      # Gray image, rgb images need pre-conversion
 
-
-X,Y=france.shape
+X,Y=pays.shape
 for x in range (0,X):
     for y in range(0,Y):
 
-        if(france[x][y]>100):
-            france[x][y]=0
+        if(pays[x][y]>0.7):
+            pays[x][y]=0
+        elif(pays[x][y]<0.3):
+            pays[x][y]=2
         else:
-            france[x][y]=2
+            pays[x][y]=3
 
 
 for x in range (1,X-1):
     for y in range(1,Y-1):
-        voisins=[france[x][y+1],france[x][y-1],france[x+1][y],france[x-1][y]]
-        if(france[x][y]==0 and (2 in voisins)):
-            france[x][y]=1
+        voisins=[pays[x][y+1],pays[x][y-1],pays[x+1][y],pays[x-1][y]]
+        if(pays[x][y]==0 and ((2 in voisins) or (3 in voisins))):
+            pays[x][y]=1
         
 for x in range (1,X-1):
     for y in range(1,Y-1):
-        voisins=[france[x][y+1],france[x][y-1],france[x+1][y],france[x-1][y]]
-        if(france[x][y]==1 and (0 not in voisins)):
-            france[x][y]=2
+        voisins=[pays[x][y+1],pays[x][y-1],pays[x+1][y],pays[x-1][y]]
+        if(pays[x][y]==1 and (0 not in voisins)):
+            if(2 in voisins):
+                pays[x][y]=2
+            else:
+                pays[x][y]=3
         
 
 
 "Writing in a file"
-fichier=open('france.txt','w')
+fichier=open('france-allemagnecor.txt','w')
 for x in range (0,X):
     for y in range(0,Y):
-        fichier.write(str(france[x][y]))
+        fichier.write(str(int(pays[x][y])))
     fichier.write('\n')
 
 
