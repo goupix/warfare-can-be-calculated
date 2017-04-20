@@ -1,7 +1,7 @@
 import numpy as np
 import plotly 
 import plotly.graph_objs as go
-
+from skimage import io
 
 def F(r,S,ku,kv,dx, dy,Du,Dv, ux, uy, vx, vy, x,y):
 
@@ -15,17 +15,13 @@ def F(r,S,ku,kv,dx, dy,Du,Dv, ux, uy, vx, vy, x,y):
 
 
 
-def euler(r,S,ku,kv,dx,dy,Du,Dv,ti,tf, L, H, h, F, state):
+def euler(r,S,ku,kv,dx,dy,Du,Dv,ti,tf, L, H, h, F, state, u_init, v_init):
 
 	T=int((tf-ti)/h)
 	X=int(L/dx)
 	Y=int(H/dy)
 
-	u_init=np.zeros((Y,X))
-	v_init=np.zeros((Y,X))
 	
-	u_init[:,0:(X/2)]=400
-	v_init[:,(X/2):X]=400
 
 	for y in range(0,Y):
 		for x in range(0,X):
@@ -86,51 +82,83 @@ def euler(r,S,ku,kv,dx,dy,Du,Dv,ti,tf, L, H, h, F, state):
 
 
 "Getting obstacle matrix from a file"
-pays=open('france.txt','r')
 
-m=[]
-for line in pays.read().split():
-	ligne=[]
-	for elt in line:
-		ligne.append(int(elt))
-	m.append(ligne)
+def get_shape_matrix(filename):
+	pays=open(filename,'r')
+
+	m=[]
+	for line in pays.read().split():
+		ligne=[]
+		for elt in line:
+			ligne.append(int(elt))
+		m.append(ligne)
+	m=np.asarray(m)
+	return m
+
+
+"Initial conditions"
+def get_initial_condition(filename, m, ind, s1, s2, s3):
+
+	pop =  io.imread( filename, as_grey=True)      # Gray image, rgb images need pre-conversion
+	
+	H=len(m)
+	L=len(m[0])
+	u_init=np.zeros((H,L))
+
+	for y in range(0,H):
+		for x in range(0,L):
+			if (m[y,x]==ind):
+				if (pop[y,x]>0.5):
+					u_init[y,x]=s1
+				if (pop[y,x]>0.1 and pop[y,x]<0.5):
+					u_init[y,x]=s2
+				if (pop[y,x]<0.1):
+					u_init[y,x]=s3
+
+			if(m[y,x]!=ind and m[y,x]>1):
+				u_init[y,x]=0
+
+	return u_init
+
+def get_diffusion_matrix(filename, m, ind, s1,s2,s3,s4):
+
+	pop =  io.imread( filename, as_grey=True)
+	
+	H=len(m)
+	L=len(m[0])
+	D=np.zeros((H,L))
+
+	for y in range(0,H):
+		for x in range(0,L):
+			if (m[y,x]==ind):
+				if (pop[y,x]>0.5):
+					D[y,x]=s3
+				if (pop[y,x]>0.1 and pop[y,x]<0.5):
+					D[y,x]=s2
+				if (pop[y,x]<0.1):
+					D[y,x]=s1
+
+			if(m[y,x]!=ind and m[y,x]>1):
+				D[y,x]=s4
+
+	return D
+
+#Indices: France(2), Allemagne (3)
+m=get_shape_matrix('france-allemagne.txt')
 H=len(m)
 L=len(m[0])
 
-"Diffusion matrix"
-
-Du=0.1*np.ones((H,L))
-Dv=0.1*np.ones((H,L))
-"Modeling \"massif central\" mountains with a lower diffusion coef"
-Du[20:30,40:60]=0.01 
-Dv[20:30,40:60]=0.01
+Du=get_diffusion_matrix('france-allemagne-pop.png',m, 2, 0.02,0.05,0.1, 0.2)
+Dv=get_diffusion_matrix('france-allemagne-pop.png',m, 3, 0.02,0.05,0.1,0.2)
 
 
+u_init=get_initial_condition('france-allemagne-pop.png',m, 2, 90,100,120)
+v_init=get_initial_condition('france-allemagne-pop.png',m, 3, 90,100,120)
 
 
-"Creating an obstacle matrix"
-'''
-L=100
-H=50
-
-state=2*np.ones((H,L))
-state[:,[0,99]]=0
-state[[0,49],:]=0
-
-state[1:49,[1,98]]=1
-state[[1,48],1:49]=1
-
-state[19:31,[39,61]]=1
-state[[19,31],40:60]=1
+xseq,yseq,u,v=euler(0.001,500,50,0,1,1,Du,Dv,0,1000,L,H,1, F, m, u_init, v_init)
 
 
-state[20:30,40:60]=0
-
-print(state)
-'''
-xseq,yseq,u,v=euler(0.01,500,10,0,1,1,Du,Dv,0,100,L,H,1, F, np.asarray(m))
-
-
-data = [go.Heatmap(z=u[90].tolist(),x=xseq,y=yseq,colorscale='bone')]
-data2 = [go.Heatmap(z=v[10].tolist(),x=xseq,y=yseq,colorscale='Reds')]
-plotly.offline.plot(data, filename='u-heatmap.html')
+data = [go.Heatmap(z=u[900].tolist(),x=xseq,y=yseq,colorscale='bone')]
+data2 = [go.Heatmap(z=v[900].tolist(),x=xseq,y=yseq,colorscale='Reds')]
+plotly.offline.plot(data2, filename='u-heatmap.html')
